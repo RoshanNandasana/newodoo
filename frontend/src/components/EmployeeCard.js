@@ -44,6 +44,12 @@ function EmployeeCard({ employee, onAttendanceUpdate }) {
         label: 'Present', 
         bgColor: '#e8f5e9' 
       },
+      CheckedOut: {
+        color: '#f44336',
+        icon: <FiberManualRecord />,
+        label: 'Checked Out',
+        bgColor: '#ffebee'
+      },
       OnLeave: { 
         color: '#2196f3', 
         icon: <FlightTakeoff />, 
@@ -417,6 +423,10 @@ function EmployeeCard({ employee, onAttendanceUpdate }) {
                 </Alert>
               )}
             </Box>
+          ) : employee.todayAttendance?.checkOutTime ? (
+            <Alert severity="info" sx={{ borderRadius: '8px' }}>
+              You have completed your attendance for today. See you tomorrow!
+            </Alert>
           ) : (
             <Button
               variant="contained"

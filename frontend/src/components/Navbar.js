@@ -491,6 +491,12 @@ function Navbar() {
               </>
             )}
 
+            {attendanceStatus === 'CheckedOut' && (
+              <Alert severity="info" sx={{ borderRadius: '10px' }}>
+                You have completed your attendance for today. See you tomorrow!
+              </Alert>
+            )}
+
             {(attendanceStatus === 'NotCheckedIn' || attendanceStatus === 'Absent') && (
               <Button
                 fullWidth
