@@ -50,9 +50,23 @@ function Dashboard() {
               new Date(a.date).toDateString() === today.toDateString()
             );
             
+            // Determine attendance status from todayAttendance
+            let attendanceStatus = emp.attendanceStatus || 'NotCheckedIn';
+            
+            if (todayAttendance) {
+              if (todayAttendance.status === 'OnLeave') {
+                attendanceStatus = 'OnLeave';
+              } else if (todayAttendance.checkInTime) {
+                attendanceStatus = 'Present'; // Present if checked in
+              } else if (todayAttendance.status === 'Absent') {
+                attendanceStatus = 'Absent';
+              }
+            }
+            
             return {
               ...emp,
-              todayAttendance
+              todayAttendance,
+              attendanceStatus // Override with calculated status
             };
           } catch (err) {
             return emp;

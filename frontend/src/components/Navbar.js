@@ -59,14 +59,23 @@ function Navbar() {
       if (todayRecord) {
         if (todayRecord.status === 'OnLeave') {
           setAttendanceStatus('OnLeave');
-        } else if (todayRecord.checkInTime) {
+          setCheckInTime(null);
+        } else if (todayRecord.checkInTime && !todayRecord.checkOutTime) {
           setAttendanceStatus('Present');
           setCheckInTime(new Date(todayRecord.checkInTime));
+        } else if (todayRecord.checkInTime && todayRecord.checkOutTime) {
+          setAttendanceStatus('Present'); // Still present but checked out
+          setCheckInTime(new Date(todayRecord.checkInTime));
+        } else if (todayRecord.status === 'Absent') {
+          setAttendanceStatus('Absent');
+          setCheckInTime(null);
         } else {
           setAttendanceStatus('NotCheckedIn');
+          setCheckInTime(null);
         }
       } else {
         setAttendanceStatus('NotCheckedIn');
+        setCheckInTime(null);
       }
     } catch (err) {
       console.log('Failed to fetch attendance');
@@ -105,9 +114,9 @@ function Navbar() {
   const getStatusColor = () => {
     switch (attendanceStatus) {
       case 'Present':
-        return '#2196f3'; // Blue
-      case 'OnLeave':
         return '#4caf50'; // Green
+      case 'OnLeave':
+        return '#2196f3'; // Blue (Airplane icon)
       case 'Absent':
         return '#ff9800'; // Yellow
       default:
@@ -197,48 +206,50 @@ function Navbar() {
           </Button>
         )}
 
-        {/* Attendance Status Circle */}
-        <IconButton
-          onClick={handleAttendanceClick}
-          sx={{
-            mr: 1,
-            bgcolor: 'rgba(255, 255, 255, 0.1)',
-            '&:hover': {
-              bgcolor: 'rgba(255, 255, 255, 0.2)',
-            }
-          }}
-        >
-          {getStatusIcon()}
-        </IconButton>
-
-        <Popover
-          open={Boolean(attendanceAnchorEl)}
-          anchorEl={attendanceAnchorEl}
-          onClose={handleAttendanceClose}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-        >
-          <Box sx={{ p: 2, minWidth: 220 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        {/* Attendance Status Circle - Only for Employees */}
+        {user?.role !== 'Admin' && (
+          <>
+            <IconButton
+              onClick={handleAttendanceClick}
+              sx={{
+                mr: 1,
+                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                }
+              }}
+            >
               {getStatusIcon()}
-              <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>
-                {attendanceStatus === 'Present' && 'Present'}
-                {attendanceStatus === 'OnLeave' && 'On Leave'}
-                {attendanceStatus === 'Absent' && 'Absent'}
-                {attendanceStatus === 'NotCheckedIn' && 'Not Checked In'}
-              </Typography>
-            </Box>
+            </IconButton>
 
-            {attendanceStatus === 'OnLeave' && (
-              <Typography variant="body2" color="text.secondary">
-                You are on approved leave today.
-              </Typography>
+            <Popover
+              open={Boolean(attendanceAnchorEl)}
+              anchorEl={attendanceAnchorEl}
+              onClose={handleAttendanceClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <Box sx={{ p: 2, minWidth: 220 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  {getStatusIcon()}
+                  <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>
+                    {attendanceStatus === 'Present' && 'Present'}
+                    {attendanceStatus === 'OnLeave' && 'On Leave'}
+                    {attendanceStatus === 'Absent' && 'Absent'}
+                    {attendanceStatus === 'NotCheckedIn' && 'Not Checked In'}
+                  </Typography>
+                </Box>
+
+                {attendanceStatus === 'OnLeave' && (
+                  <Typography variant="body2" color="text.secondary">
+                    You are on approved leave today.
+                  </Typography>
             )}
 
             {attendanceStatus === 'Present' && checkInTime && (
@@ -274,6 +285,8 @@ function Navbar() {
             )}
           </Box>
         </Popover>
+          </>
+        )}
 
         <IconButton onClick={handleMenuOpen}>
           <Avatar

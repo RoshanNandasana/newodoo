@@ -37,13 +37,15 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 function Leave() {
   const [myLeaves, setMyLeaves] = useState([]);
   const [allLeaves, setAllLeaves] = useState([]);
+  const [pendingLeaves, setPendingLeaves] = useState([]);
   const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [reviewDialog, setReviewDialog] = useState(null);
-  const { isAdminOrHR } = useAuth();
+  const [filterStatus, setFilterStatus] = useState('All');
+  const { isAdminOrHR, user } = useAuth();
 
   const [formData, setFormData] = useState({
     leaveType: 'PaidLeave',
@@ -58,6 +60,7 @@ function Leave() {
     fetchBalance();
     if (isAdminOrHR) {
       fetchAllLeaves();
+      fetchPendingLeaves();
     }
   }, []);
 
@@ -75,10 +78,19 @@ function Leave() {
 
   const fetchAllLeaves = async () => {
     try {
-      const response = await leaveAPI.getAll({ status: 'Pending' });
+      const response = await leaveAPI.getAll(); // Get all leaves without filter
       setAllLeaves(response.data);
     } catch (err) {
       console.log('Failed to load all leaves');
+    }
+  };
+
+  const fetchPendingLeaves = async () => {
+    try {
+      const response = await leaveAPI.getAll({ status: 'Pending' });
+      setPendingLeaves(response.data);
+    } catch (err) {
+      console.log('Failed to load pending leaves');
     }
   };
 
@@ -140,7 +152,8 @@ function Leave() {
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to apply for leave');
     }
-  };
+  }; // Refresh all leaves
+      fetchPendingLeaves(); // Refresh pending leaves
 
   const handleReview = async (id, status, comments) => {
     setError('');
@@ -165,56 +178,79 @@ function Leave() {
           <Typography variant="h4" fontWeight="bold">
             Leave Management
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setOpenDialog(true)}
-          >
-            Apply for Leave
-          </Button>
+          {user?.role !== 'Admin' && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenDialog(true)}
+            >
+              Apply for Leave
+            </Button>
+          )}
         </Box>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
-        {/* Leave Balance */}
-        {balance && (
+        {/* Leave Balance - Only for Employees and HR */}
+        {balance && user?.role !== 'Admin' && (
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 3, textAlign: 'center' }}>
-                <Typography variant="h6" color="primary" gutterBottom>
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white'
+                }}
+              >
+                <Typography variant="h6" gutterBottom sx={{ opacity: 0.9 }}>
                   Paid Leave
                 </Typography>
-                <Typography variant="h3" fontWeight="bold">
+                <Typography variant="h2" fontWeight="bold">
                   {balance.paidLeave}
                 </Typography>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" sx={{ opacity: 0.8 }}>
                   days remaining
                 </Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 3, textAlign: 'center' }}>
-                <Typography variant="h6" color="info.main" gutterBottom>
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                  color: 'white'
+                }}
+              >
+                <Typography variant="h6" gutterBottom sx={{ opacity: 0.9 }}>
                   Sick Leave
                 </Typography>
-                <Typography variant="h3" fontWeight="bold">
+                <Typography variant="h2" fontWeight="bold">
                   {balance.sickLeave}
                 </Typography>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" sx={{ opacity: 0.8 }}>
                   days remaining
                 </Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 3, textAlign: 'center' }}>
-                <Typography variant="h6" color="warning.main" gutterBottom>
+              <Paper 
+                sx={{ 
+                  p: 3, 
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                  color: 'white'
+                }}
+              >
+                <Typography variant="h6" gutterBottom sx={{ opacity: 0.9 }}>
                   Unpaid Leave
                 </Typography>
-                <Typography variant="h3" fontWeight="bold">
+                <Typography variant="h2" fontWeight="bold">
                   ∞
                 </Typography>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" sx={{ opacity: 0.8 }}>
                   no limit
                 </Typography>
               </Paper>
@@ -222,11 +258,12 @@ function Leave() {
           </Grid>
         )}
 
-        {/* My Leave Applications */}
-        <Paper sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            My Leave Applications
-          </Typography>
+        {/* My Leave Applications - Only for Employees and HR */}
+        {user?.role !== 'Admin' && (
+          <Paper sx={{ p: 3, mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              My Leave Applications
+            </Typography>
           
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -236,24 +273,33 @@ function Leave() {
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow>
-                    <TableCell>Leave Type</TableCell>
-                    <TableCell>Start Date</TableCell>
-                    <TableCell>End Date</TableCell>
-                    <TableCell>Days</TableCell>
-                    <TableCell>Reason</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Comments</TableCell>
+                  <TableRow sx={{ bgcolor: 'primary.main' }}>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Leave Type</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Start Date</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>End Date</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Days</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Reason</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Status</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Comments</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {myLeaves.map((leave) => (
-                    <TableRow key={leave._id}>
-                      <TableCell>{leave.leaveType.replace(/([A-Z])/g, ' $1').trim()}</TableCell>
-                      <TableCell>{new Date(leave.startDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{new Date(leave.endDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{leave.numberOfDays}</TableCell>
-                      <TableCell>{leave.reason}</TableCell>
+                    <TableRow key={leave._id} hover>
+                      <TableCell>
+                        <Chip 
+                          label={leave.leaveType.replace(/([A-Z])/g, ' $1').trim()}
+                          color={
+                            leave.leaveType === 'PaidLeave' ? 'primary' :
+                            leave.leaveType === 'SickLeave' ? 'secondary' : 'default'
+                          }
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{new Date(leave.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</TableCell>
+                      <TableCell>{new Date(leave.endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</TableCell>
+                      <TableCell><strong>{leave.numberOfDays}</strong> day{leave.numberOfDays > 1 ? 's' : ''}</TableCell>
+                      <TableCell>{leave.reason || '-'}</TableCell>
                       <TableCell>
                         <Chip
                           label={leave.status}
@@ -277,11 +323,12 @@ function Leave() {
               No leave applications found
             </Typography>
           )}
-        </Paper>
+          </Paper>
+        )}
 
         {/* Admin/HR: Pending Leave Requests */}
         {isAdminOrHR && (
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ p: 3, mb: 4 }}>
             <Typography variant="h6" gutterBottom>
               Pending Leave Requests
             </Typography>
@@ -289,37 +336,65 @@ function Leave() {
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow>
-                    <TableCell>Employee</TableCell>
-                    <TableCell>Leave Type</TableCell>
-                    <TableCell>Start Date</TableCell>
-                    <TableCell>End Date</TableCell>
-                    <TableCell>Days</TableCell>
-                    <TableCell>Reason</TableCell>
-                    <TableCell>Actions</TableCell>
+                  <TableRow sx={{ bgcolor: 'warning.main' }}>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Employee</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Leave Type</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Start Date</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>End Date</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Days</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Reason</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Attachment</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {allLeaves.map((leave) => (
-                    <TableRow key={leave._id}>
+                  {pendingLeaves.map((leave) => (
+                    <TableRow key={leave._id} hover>
                       <TableCell>
-                        {leave.employee?.firstName} {leave.employee?.lastName}
+                        <strong>{leave.employee?.firstName} {leave.employee?.lastName}</strong>
+                        <br />
+                        <Typography variant="caption" color="textSecondary">
+                          {leave.employee?.email}
+                        </Typography>
                       </TableCell>
-                      <TableCell>{leave.leaveType.replace(/([A-Z])/g, ' $1').trim()}</TableCell>
-                      <TableCell>{new Date(leave.startDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{new Date(leave.endDate).toLocaleDateString()}</TableCell>
-                      <TableCell>{leave.numberOfDays}</TableCell>
-                      <TableCell>{leave.reason}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={leave.leaveType.replace(/([A-Z])/g, ' $1').trim()}
+                          color={
+                            leave.leaveType === 'PaidLeave' ? 'primary' :
+                            leave.leaveType === 'SickLeave' ? 'secondary' : 'default'
+                          }
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{new Date(leave.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</TableCell>
+                      <TableCell>{new Date(leave.endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</TableCell>
+                      <TableCell><strong>{leave.numberOfDays}</strong> day{leave.numberOfDays > 1 ? 's' : ''}</TableCell>
+                      <TableCell>{leave.reason || '-'}</TableCell>
+                      <TableCell>
+                        {leave.attachment ? (
+                          <Button 
+                            size="small" 
+                            startIcon={<AttachFileIcon />}
+                            href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${leave.attachment}`}
+                            target="_blank"
+                          >
+                            View
+                          </Button>
+                        ) : '-'}
+                      </TableCell>
                       <TableCell>
                         <IconButton
                           color="success"
                           onClick={() => setReviewDialog({ leave, status: 'Approved' })}
+                          size="small"
                         >
                           <CheckIcon />
                         </IconButton>
                         <IconButton
                           color="error"
                           onClick={() => setReviewDialog({ leave, status: 'Rejected' })}
+                          size="small"
                         >
                           <CloseIcon />
                         </IconButton>
@@ -330,9 +405,109 @@ function Leave() {
               </Table>
             </TableContainer>
 
-            {allLeaves.length === 0 && (
+            {pendingLeaves.length === 0 && (
               <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', p: 4 }}>
                 No pending leave requests
+              </Typography>
+            )}
+          </Paper>
+        )}
+
+        {/* Admin/HR: All Leave Requests */}
+        {isAdminOrHR && (
+          <Paper sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">
+                All Leave Requests
+              </Typography>
+              <FormControl sx={{ minWidth: 150 }}>
+                <InputLabel>Filter by Status</InputLabel>
+                <Select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  label="Filter by Status"
+                  size="small"
+                >
+                  <MenuItem value="All">All</MenuItem>
+                  <MenuItem value="Pending">Pending</MenuItem>
+                  <MenuItem value="Approved">Approved</MenuItem>
+                  <MenuItem value="Rejected">Rejected</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+            
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'primary.main' }}>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Employee</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Leave Type</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Start Date</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>End Date</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Days</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Reason</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Status</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Reviewed By</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Comments</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {allLeaves
+                    .filter(leave => filterStatus === 'All' || leave.status === filterStatus)
+                    .map((leave) => (
+                    <TableRow key={leave._id} hover>
+                      <TableCell>
+                        <strong>{leave.employee?.firstName} {leave.employee?.lastName}</strong>
+                        <br />
+                        <Typography variant="caption" color="textSecondary">
+                          {leave.employee?.email}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={leave.leaveType.replace(/([A-Z])/g, ' $1').trim()}
+                          color={
+                            leave.leaveType === 'PaidLeave' ? 'primary' :
+                            leave.leaveType === 'SickLeave' ? 'secondary' : 'default'
+                          }
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{new Date(leave.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</TableCell>
+                      <TableCell>{new Date(leave.endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</TableCell>
+                      <TableCell><strong>{leave.numberOfDays}</strong> day{leave.numberOfDays > 1 ? 's' : ''}</TableCell>
+                      <TableCell>{leave.reason || '-'}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={leave.status}
+                          color={
+                            leave.status === 'Approved' ? 'success' :
+                            leave.status === 'Rejected' ? 'error' : 'warning'
+                          }
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {leave.reviewedBy?.loginId || '-'}
+                        {leave.reviewedAt && (
+                          <>
+                            <br />
+                            <Typography variant="caption" color="textSecondary">
+                              {new Date(leave.reviewedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </Typography>
+                          </>
+                        )}
+                      </TableCell>
+                      <TableCell>{leave.reviewComments || '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {allLeaves.filter(leave => filterStatus === 'All' || leave.status === filterStatus).length === 0 && (
+              <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', p: 4 }}>
+                No leave requests found
               </Typography>
             )}
           </Paper>

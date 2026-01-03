@@ -37,7 +37,7 @@ function Attendance() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [tabValue, setTabValue] = useState(0);
-  const { isAdminOrHR } = useAuth();
+  const { isAdminOrHR, user } = useAuth();
 
   useEffect(() => {
     if (isAdminOrHR && tabValue === 0) {
@@ -130,7 +130,7 @@ function Attendance() {
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {isAdminOrHR && (
+        {isAdminOrHR && user?.role !== 'Admin' && (
           <Paper sx={{ mb: 3 }}>
             <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)}>
               <Tab label="Day-wise Attendance (All Employees)" />
@@ -140,7 +140,7 @@ function Attendance() {
         )}
 
         {/* Admin/HR Day-wise View */}
-        {isAdminOrHR && tabValue === 0 ? (
+        {isAdminOrHR && (user?.role === 'Admin' || tabValue === 0) ? (
           <>
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
