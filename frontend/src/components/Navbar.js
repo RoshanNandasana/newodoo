@@ -18,6 +18,7 @@ import {
   Badge,
   Chip
 } from '@mui/material';
+import Alert from '@mui/material/Alert';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PersonIcon from '@mui/icons-material/Person';
@@ -40,6 +41,7 @@ function Navbar() {
   const [attendanceStatus, setAttendanceStatus] = useState('NotCheckedIn');
   const [checkInTime, setCheckInTime] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [attendanceMessage, setAttendanceMessage] = useState({ type: '', text: '' });
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, isAdminOrHR } = useAuth();
@@ -90,14 +92,16 @@ function Navbar() {
 
   const handleCheckIn = async () => {
     setLoading(true);
+    setAttendanceMessage({ type: '', text: '' });
     try {
       await attendanceAPI.checkIn();
       setAttendanceStatus('Present');
       setCheckInTime(new Date());
       handleAttendanceClose();
       emitAttendanceUpdate(); // Notify all components
+      setAttendanceMessage({ type: 'success', text: 'Checked in successfully' });
     } catch (err) {
-      console.error('Check-in failed:', err);
+      setAttendanceMessage({ type: 'error', text: err.response?.data?.error || 'Check-in failed. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -105,13 +109,15 @@ function Navbar() {
 
   const handleCheckOut = async () => {
     setLoading(true);
+    setAttendanceMessage({ type: '', text: '' });
     try {
       await attendanceAPI.checkOut();
       await fetchTodayAttendance();
       handleAttendanceClose();
       emitAttendanceUpdate(); // Notify all components
+      setAttendanceMessage({ type: 'success', text: 'Checked out successfully' });
     } catch (err) {
-      console.error('Check-out failed:', err);
+      setAttendanceMessage({ type: 'error', text: err.response?.data?.error || 'Check-out failed. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -152,10 +158,12 @@ function Navbar() {
 
   const handleAttendanceClick = (event) => {
     setAttendanceAnchorEl(event.currentTarget);
+    setAttendanceMessage({ type: '', text: '' });
   };
 
   const handleAttendanceClose = () => {
     setAttendanceAnchorEl(null);
+    setAttendanceMessage({ type: '', text: '' });
   };
 
   const handleMenuOpen = (event) => {
@@ -391,6 +399,15 @@ function Navbar() {
           }}
         >
           <Box sx={{ p: 3.5 }}>
+            {attendanceMessage.text && (
+              <Alert 
+                severity={attendanceMessage.type === 'error' ? 'error' : 'success'}
+                sx={{ mb: 2.5, borderRadius: '10px' }}
+              >
+                {attendanceMessage.text}
+              </Alert>
+            )}
+
             {/* Status Header */}
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 3.5 }}>
               <Box sx={{ 

@@ -30,20 +30,24 @@ function EmployeeCard({ employee, onAttendanceUpdate }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const isOwnCard = user?.employee?._id === employee._id;
+    setSuccess('');
 
   const getStatusInfo = () => {
     const status = employee.attendanceStatus || 'NotCheckedIn';
     const info = {
       Present: { 
+    setSuccess('');
         color: '#4caf50', 
         icon: <FiberManualRecord />, 
         label: 'Present', 
         bgColor: '#e8f5e9' 
       },
+      setSuccess('Checked in successfully');
       OnLeave: { 
         color: '#2196f3', 
         icon: <FlightTakeoff />, 
@@ -54,11 +58,13 @@ function EmployeeCard({ employee, onAttendanceUpdate }) {
         color: '#ff9800', 
         icon: <FiberManualRecord />, 
         label: 'Absent', 
+    setSuccess('');
         bgColor: '#fff3e0' 
       },
       NotCheckedIn: { 
         color: '#f44336', 
         icon: <FiberManualRecord />, 
+      setSuccess('Checked out successfully');
         label: 'Not Checked In', 
         bgColor: '#ffebee' 
       }
@@ -78,6 +84,18 @@ function EmployeeCard({ employee, onAttendanceUpdate }) {
   const handleClose = () => {
     setAnchorEl(null);
     setError('');
+          {success && (
+            <Alert 
+              severity="success" 
+              sx={{ 
+                mb: 2, 
+                borderRadius: '8px',
+                fontSize: '13px'
+              }}
+            >
+              {success}
+            </Alert>
+          )}
   };
 
   const handleViewProfile = (event) => {
