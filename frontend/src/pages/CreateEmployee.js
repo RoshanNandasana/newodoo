@@ -12,20 +12,21 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Divider,
   IconButton,
-  Snackbar
+  InputAdornment
 } from '@mui/material';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { authAPI } from '../services/api';
+import { PersonAddOutlined, Visibility, VisibilityOff } from '@mui/icons-material';
 
 function CreateEmployee() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [credentials, setCredentials] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [copyMessage, setCopyMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -87,7 +88,6 @@ function CreateEmployee() {
     e.preventDefault();
     setError('');
     setSuccess('');
-    setCredentials(null); // Clear previous credentials
     setLoading(true);
 
     try {
@@ -95,7 +95,7 @@ function CreateEmployee() {
       setCredentials(response.data.credentials);
       setSuccess('Employee created successfully!');
       
-      // Reset form after 30 seconds
+      // Reset form after 5 seconds
       setTimeout(() => {
         setFormData({
           firstName: '',
@@ -112,330 +112,694 @@ function CreateEmployee() {
           bankDetails: { accountNumber: '', bankName: '', ifscCode: '', pan: '', uan: '' }
         });
         setCredentials(null);
-      }, 30000);
+      }, 5000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create employee');
+      setError(err.response?.data?.error || 'Failed to create employee. Please check the information and try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      dateOfBirth: '',
+      gender: '',
+      nationality: '',
+      department: '',
+      position: '',
+      dateOfJoining: '',
+      address: { street: '', city: '', state: '', zipCode: '', country: '' },
+      bankDetails: { accountNumber: '', bankName: '', ifscCode: '', pan: '', uan: '' }
+    });
+    setError('');
+    setSuccess('');
+    setCredentials(null);
+  };
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f8f9fa' }}>
       <Navbar />
       
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Create New Employee
-        </Typography>
-
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-        
-        {credentials && (
-          <Alert 
-            severity="success" 
-            sx={{ 
-              mb: 2, 
-              p: 3,
-              border: '2px solid #4caf50',
-              '& .MuiAlert-message': { width: '100%' }
-            }}
-          >
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
-              ✅ Employee Created Successfully!
+        {/* Page Header */}
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+            <PersonAddOutlined sx={{ fontSize: 32, color: '#714B67' }} />
+            <Typography variant="h4" fontWeight="600" color="#2c3e50">
+              Create New Employee
             </Typography>
-            <Typography variant="body1" fontWeight="bold" sx={{ mt: 2, mb: 1 }}>
-              Generated Credentials:
-            </Typography>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, bgcolor: '#f5f5f5', p: 1.5, borderRadius: 1 }}>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="caption" color="text.secondary">Login ID</Typography>
-                <Typography variant="h6" fontWeight="bold">{credentials.loginId}</Typography>
-              </Box>
-              <IconButton 
-                onClick={() => handleCopy(credentials.loginId, 'Login ID')} 
-                color="primary"
-                size="small"
-              >
-                <ContentCopyIcon />
-              </IconButton>
-            </Box>
+          </Box>
+          <Typography variant="body1" color="#666">
+            Add a new employee to the system and generate their login credentials
+          </Typography>
+        </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, bgcolor: '#f5f5f5', p: 1.5, borderRadius: 1 }}>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="caption" color="text.secondary">Temporary Password</Typography>
-                <Typography variant="h6" fontWeight="bold">{credentials.tempPassword}</Typography>
+        {/* Alerts Section */}
+        <Box sx={{ mb: 3 }}>
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 2, 
+                borderRadius: '8px',
+                '& .MuiAlert-icon': { color: '#dc3545' }
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+          
+          {success && (
+            <Alert 
+              severity="success" 
+              sx={{ 
+                mb: 2, 
+                borderRadius: '8px',
+                '& .MuiAlert-icon': { color: '#28a745' }
+              }}
+            >
+              {success}
+            </Alert>
+          )}
+          
+          {credentials && (
+            <Alert 
+              severity="info" 
+              sx={{ 
+                mb: 2, 
+                borderRadius: '8px',
+                backgroundColor: '#e8f4fd'
+              }}
+            >
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="subtitle1" fontWeight="600" color="#2c3e50" gutterBottom>
+                  📋 Employee Credentials Generated
+                </Typography>
+                <Box sx={{ 
+                  backgroundColor: '#ffffff', 
+                  p: 2, 
+                  borderRadius: '6px', 
+                  border: '1px solid #dee2e6',
+                  mt: 1
+                }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={6}>
+                      <Typography variant="body2" color="#666" sx={{ mb: 0.5 }}>
+                        Login ID
+                      </Typography>
+                      <Typography variant="body1" fontWeight="500" color="#2c3e50">
+                        {credentials.loginId}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <Typography variant="body2" color="#666" sx={{ mb: 0.5 }}>
+                        Temporary Password
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="body1" fontWeight="500" color="#2c3e50" sx={{ mr: 1 }}>
+                          {showPassword ? credentials.tempPassword : '••••••••'}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={() => setShowPassword(!showPassword)}
+                          sx={{ color: '#714B67' }}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Box>
               </Box>
-              <IconButton 
-                onClick={() => handleCopy(credentials.tempPassword, 'Password')} 
-                color="primary"
-                size="small"
-              >
-                <ContentCopyIcon />
-              </IconButton>
-            </Box>
-
-            <Alert severity="warning" sx={{ mt: 2 }}>
-              <Typography variant="body2" fontWeight="bold">
-                ⚠️ Important: These credentials will disappear in 30 seconds. Please copy and save them securely!
+              <Typography variant="body2" color="#856404" sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                fontWeight: 500
+              }}>
+                ⚠️ Please save these credentials securely and share with the employee
               </Typography>
             </Alert>
-          </Alert>
-        )}
+          )}
+        </Box>
 
-        <Paper sx={{ p: 4 }}>
+        {/* Main Form */}
+        <Paper sx={{ 
+          p: { xs: 3, md: 4 }, 
+          borderRadius: '12px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
+        }}>
           <form onSubmit={handleSubmit}>
-            <Typography variant="h6" gutterBottom>
-              Personal Information
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="First Name"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Last Name"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Date of Birth"
-                  name="dateOfBirth"
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={handleChange}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Gender</InputLabel>
-                  <Select
-                    name="gender"
-                    value={formData.gender}
+            {/* Personal Information Section */}
+            <Box sx={{ mb: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Box sx={{ 
+                  width: '4px', 
+                  height: '20px', 
+                  backgroundColor: '#714B67',
+                  borderRadius: '2px' 
+                }} />
+                <Typography variant="h6" fontWeight="600" color="#2c3e50">
+                  Personal Information
+                </Typography>
+              </Box>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="First Name"
+                    name="firstName"
+                    value={formData.firstName}
                     onChange={handleChange}
-                    label="Gender"
-                  >
-                    <MenuItem value="Male">Male</MenuItem>
-                    <MenuItem value="Female">Female</MenuItem>
-                    <MenuItem value="Other">Other</MenuItem>
-                  </Select>
-                </FormControl>
+                    fullWidth
+                    required
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Last Name"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Email Address"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Phone Number"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Date of Birth"
+                    name="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={handleChange}
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth size="medium" sx={{ 
+                    '& .MuiOutlinedInput-root': { borderRadius: '8px' }
+                  }}>
+                    <InputLabel>Gender</InputLabel>
+                    <Select
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleChange}
+                      label="Gender"
+                      sx={{
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }}
+                    >
+                      <MenuItem value="Male">Male</MenuItem>
+                      <MenuItem value="Female">Female</MenuItem>
+                      <MenuItem value="Other">Other</MenuItem>
+                      <MenuItem value="Prefer not to say">Prefer not to say</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Nationality"
+                    name="nationality"
+                    value={formData.nationality}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Nationality"
-                  name="nationality"
-                  value={formData.nationality}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
+            </Box>
 
-            <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
-              Company Information
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Department"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Position"
-                  name="position"
-                  value={formData.position}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Date of Joining"
-                  name="dateOfJoining"
-                  type="date"
-                  value={formData.dateOfJoining}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-            </Grid>
+            <Divider sx={{ my: 4 }} />
 
-            <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
-              Address
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  label="Street"
-                  name="address.street"
-                  value={formData.address.street}
-                  onChange={handleChange}
-                  fullWidth
-                />
+            {/* Company Information Section */}
+            <Box sx={{ mb: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Box sx={{ 
+                  width: '4px', 
+                  height: '20px', 
+                  backgroundColor: '#714B67',
+                  borderRadius: '2px' 
+                }} />
+                <Typography variant="h6" fontWeight="600" color="#2c3e50">
+                  Company Information
+                </Typography>
+              </Box>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Position / Job Title"
+                    name="position"
+                    value={formData.position}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Date of Joining"
+                    name="dateOfJoining"
+                    type="date"
+                    value={formData.dateOfJoining}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    InputLabelProps={{ shrink: true }}
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="City"
-                  name="address.city"
-                  value={formData.address.city}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="State"
-                  name="address.state"
-                  value={formData.address.state}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Zip Code"
-                  name="address.zipCode"
-                  value={formData.address.zipCode}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Country"
-                  name="address.country"
-                  value={formData.address.country}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
+            </Box>
 
-            <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
-              Bank Details
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Account Number"
-                  name="bankDetails.accountNumber"
-                  value={formData.bankDetails.accountNumber}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Bank Name"
-                  name="bankDetails.bankName"
-                  value={formData.bankDetails.bankName}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  label="IFSC Code"
-                  name="bankDetails.ifscCode"
-                  value={formData.bankDetails.ifscCode}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  label="PAN"
-                  name="bankDetails.pan"
-                  value={formData.bankDetails.pan}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  label="UAN"
-                  name="bankDetails.uan"
-                  value={formData.bankDetails.uan}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
+            <Divider sx={{ my: 4 }} />
 
-            <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
+            {/* Address Section */}
+            <Box sx={{ mb: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Box sx={{ 
+                  width: '4px', 
+                  height: '20px', 
+                  backgroundColor: '#714B67',
+                  borderRadius: '2px' 
+                }} />
+                <Typography variant="h6" fontWeight="600" color="#2c3e50">
+                  Address Information
+                </Typography>
+              </Box>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Street Address"
+                    name="address.street"
+                    value={formData.address.street}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="City"
+                    name="address.city"
+                    value={formData.address.city}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="State / Province"
+                    name="address.state"
+                    value={formData.address.state}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="ZIP / Postal Code"
+                    name="address.zipCode"
+                    value={formData.address.zipCode}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Country"
+                    name="address.country"
+                    value={formData.address.country}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+
+            <Divider sx={{ my: 4 }} />
+
+            {/* Bank Details Section */}
+            <Box sx={{ mb: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                <Box sx={{ 
+                  width: '4px', 
+                  height: '20px', 
+                  backgroundColor: '#714B67',
+                  borderRadius: '2px' 
+                }} />
+                <Typography variant="h6" fontWeight="600" color="#2c3e50">
+                  Bank Details
+                </Typography>
+              </Box>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Account Number"
+                    name="bankDetails.accountNumber"
+                    value={formData.bankDetails.accountNumber}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Bank Name"
+                    name="bankDetails.bankName"
+                    value={formData.bankDetails.bankName}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    label="IFSC Code"
+                    name="bankDetails.ifscCode"
+                    value={formData.bankDetails.ifscCode}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    label="PAN Number"
+                    name="bankDetails.pan"
+                    value={formData.bankDetails.pan}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    label="UAN Number"
+                    name="bankDetails.uan"
+                    value={formData.bankDetails.uan}
+                    onChange={handleChange}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#714B67',
+                          borderWidth: '2px'
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+
+            {/* Action Buttons */}
+            <Box sx={{ 
+              mt: 6, 
+              pt: 3, 
+              borderTop: '1px solid #e9ecef',
+              display: 'flex', 
+              gap: 2,
+              justifyContent: 'flex-end'
+            }}>
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={() => navigate('/dashboard')}
+                sx={{
+                  px: 4,
+                  borderRadius: '8px',
+                  borderColor: '#dee2e6',
+                  color: '#6c757d',
+                  fontWeight: 500,
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderColor: '#714B67',
+                    backgroundColor: 'rgba(113, 75, 103, 0.04)'
+                  }
+                }}
+              >
+                Cancel
+              </Button>
+              
               <Button
                 type="submit"
                 variant="contained"
                 size="large"
                 disabled={loading}
+                sx={{
+                  px: 5,
+                  borderRadius: '8px',
+                  backgroundColor: '#714B67',
+                  color: '#ffffff',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  boxShadow: 'none',
+                  '&:hover': {
+                    backgroundColor: '#5d3d54',
+                    boxShadow: '0 4px 12px rgba(113, 75, 103, 0.3)'
+                  },
+                  '&:disabled': {
+                    backgroundColor: '#e9ecef',
+                    color: '#adb5bd'
+                  }
+                }}
               >
-                {loading ? 'Creating...' : 'Create Employee'}
-              </Button>
-              <Button
-                variant="outlined"
-                size="large"
-                onClick={() => navigate('/dashboard')}
-              >
-                Cancel
+                {loading ? 'Creating Employee...' : 'Create Employee'}
               </Button>
             </Box>
           </form>
         </Paper>
-      </Container>
 
-      <Snackbar
-        open={!!copyMessage}
-        autoHideDuration={2000}
-        onClose={() => setCopyMessage('')}
-        message={copyMessage}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
+        {/* Form Note */}
+        <Box sx={{ 
+          mt: 3, 
+          p: 2, 
+          backgroundColor: 'rgba(113, 75, 103, 0.04)', 
+          borderRadius: '8px',
+          border: '1px solid rgba(113, 75, 103, 0.1)'
+        }}>
+          <Typography variant="body2" color="#714B67" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <span style={{ fontSize: '18px' }}>💡</span>
+            <span><strong>Note:</strong> All fields marked with * are required. Login credentials will be generated automatically upon successful submission.</span>
+          </Typography>
+        </Box>
+      </Container>
     </Box>
   );
 }
