@@ -42,6 +42,7 @@ function Navbar() {
   const [checkInTime, setCheckInTime] = useState(null);
   const [loading, setLoading] = useState(false);
   const [attendanceMessage, setAttendanceMessage] = useState({ type: '', text: '' });
+  const [attendanceMessage, setAttendanceMessage] = useState({ type: '', text: '' });
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, isAdminOrHR } = useAuth();
@@ -72,7 +73,7 @@ function Navbar() {
           setAttendanceStatus('Present');
           setCheckInTime(new Date(todayRecord.checkInTime));
         } else if (todayRecord.checkInTime && todayRecord.checkOutTime) {
-          setAttendanceStatus('Present'); // Still present but checked out
+          setAttendanceStatus('CheckedOut');
           setCheckInTime(new Date(todayRecord.checkInTime));
         } else if (todayRecord.status === 'Absent') {
           setAttendanceStatus('Absent');
@@ -112,6 +113,7 @@ function Navbar() {
     setAttendanceMessage({ type: '', text: '' });
     try {
       await attendanceAPI.checkOut();
+      setAttendanceStatus('CheckedOut');
       await fetchTodayAttendance();
       handleAttendanceClose();
       emitAttendanceUpdate(); // Notify all components
@@ -127,6 +129,8 @@ function Navbar() {
     switch (attendanceStatus) {
       case 'Present':
         return '#4caf50'; // Green
+      case 'CheckedOut':
+        return '#f44336'; // Red after checkout
       case 'OnLeave':
         return '#2196f3'; // Blue (Airplane icon)
       case 'Absent':
@@ -140,6 +144,8 @@ function Navbar() {
     switch (attendanceStatus) {
       case 'Present':
         return 'Present';
+      case 'CheckedOut':
+        return 'Checked Out';
       case 'OnLeave':
         return 'On Leave';
       case 'Absent':

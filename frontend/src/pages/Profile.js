@@ -58,6 +58,16 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [personalForm, setPersonalForm] = useState({
+    phone: '',
+    street: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: ''
+  });
+  const [savingPersonal, setSavingPersonal] = useState(false);
+  const [personalSuccess, setPersonalSuccess] = useState('');
   const { id } = useParams();
   const { user, isAdminOrHR } = useAuth();
 
@@ -79,6 +89,14 @@ function Profile() {
     try {
       const response = await employeeAPI.getById(id);
       setEmployee(response.data);
+      setPersonalForm({
+        phone: response.data.phone || '',
+        street: response.data.address?.street || '',
+        city: response.data.address?.city || '',
+        state: response.data.address?.state || '',
+        zipCode: response.data.address?.zipCode || '',
+        country: response.data.address?.country || ''
+      });
       setError('');
     } catch (err) {
       setError('Failed to load employee profile. Please try again.');
@@ -98,6 +116,36 @@ function Profile() {
 
   const handleTabChange = (event, newValue) => {
     setTab(newValue);
+  };
+
+  const handlePersonalChange = (field, value) => {
+    setPersonalForm((prev) => ({ ...prev, [field]: value }));
+    setPersonalSuccess('');
+  };
+
+  const handleSavePersonal = async () => {
+    setSavingPersonal(true);
+    setError('');
+    setPersonalSuccess('');
+    try {
+      const payload = {
+        phone: personalForm.phone,
+        address: {
+          street: personalForm.street,
+          city: personalForm.city,
+          state: personalForm.state,
+          zipCode: personalForm.zipCode,
+          country: personalForm.country
+        }
+      };
+      const response = await employeeAPI.update(id, payload);
+      setEmployee(response.data);
+      setPersonalSuccess('Personal info updated successfully');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update personal info.');
+    } finally {
+      setSavingPersonal(false);
+    }
   };
 
   const handleProfilePictureUpload = async (event) => {
@@ -300,6 +348,90 @@ function Profile() {
             {canViewSalary && <Tab icon={<Paid />} iconPosition="start" label="Salary Details" />}
           </Tabs>
         </Paper>
+
+        {isOwnProfile && (
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 3, 
+              mb: 3, 
+              borderRadius: '12px',
+              border: '1px solid #e0e0e0',
+              backgroundColor: '#ffffff'
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" fontWeight={600} color="#2c3e50">
+                Edit Personal Info
+              </Typography>
+              <Button 
+                variant="contained"
+                onClick={handleSavePersonal}
+                disabled={savingPersonal}
+                sx={{ textTransform: 'none', backgroundColor: '#714B67', '&:hover': { backgroundColor: '#5d3d54' } }}
+              >
+                {savingPersonal ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </Box>
+
+            {personalSuccess && (
+              <Alert severity="success" sx={{ mb: 2, borderRadius: '8px' }}>
+                {personalSuccess}
+              </Alert>
+            )}
+
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Phone"
+                  fullWidth
+                  value={personalForm.phone}
+                  onChange={(e) => handlePersonalChange('phone', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Street"
+                  fullWidth
+                  value={personalForm.street}
+                  onChange={(e) => handlePersonalChange('street', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="City"
+                  fullWidth
+                  value={personalForm.city}
+                  onChange={(e) => handlePersonalChange('city', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="State"
+                  fullWidth
+                  value={personalForm.state}
+                  onChange={(e) => handlePersonalChange('state', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Zip Code"
+                  fullWidth
+                  value={personalForm.zipCode}
+                  onChange={(e) => handlePersonalChange('zipCode', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Country"
+                  fullWidth
+                  value={personalForm.country}
+                  onChange={(e) => handlePersonalChange('country', e.target.value)}
+                />
+              </Grid>
+            </Grid>
+          </Paper>
+        )}
 
         {/* Tab Content */}
         <Box sx={{ mt: 2 }}>
