@@ -500,20 +500,124 @@ function Login() {
             </Button>
           </form>
 
-          <Box sx={{ mt: { xs: 4, md: 5 }, pt: { xs: 3, md: 4 }, borderTop: '1px solid #f0f0f0' }}>
+          {/* Demo Credentials Section */}
+          <Box 
+            sx={{ 
+              mt: { xs: 4, md: 5 }, 
+              pt: { xs: 3, md: 4 }, 
+              borderTop: '1px solid #f0f0f0' 
+            }}
+          >
             <Typography
               sx={{
-                fontSize: { xs: '12px', md: '13px' },
-                color: '#666666',
-                textAlign: 'center',
-                lineHeight: 1.5
+                fontSize: { xs: '13px', md: '14px' },
+                color: '#714B67',
+                fontWeight: 600,
+                mb: 2,
+                textAlign: 'center'
               }}
             >
-              For security, only authorized administrators can create and manage employee accounts.
-              <br />
-              <Box component="span" sx={{ fontSize: '11px', color: '#999999', mt: 0.5, display: 'inline-block' }}>
-                Contact your system administrator for account assistance
+              Demo Credentials
+            </Typography>
+            
+            {/* Admin Credentials */}
+            <Box 
+              sx={{ 
+                backgroundColor: '#f9f5f8',
+                borderRadius: '10px',
+                padding: { xs: '12px 16px', md: '14px 18px' },
+                mb: 2,
+                border: '1px solid #e8d4e0'
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: { xs: '11px', md: '12px' },
+                  color: '#714B67',
+                  fontWeight: 600,
+                  mb: 1,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                👤 Admin Account
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography
+                  sx={{
+                    fontSize: { xs: '13px', md: '14px' },
+                    color: '#333333',
+                    fontFamily: 'monospace'
+                  }}
+                >
+                  ID: <Box component="span" sx={{ fontWeight: 600, color: '#714B67' }}>ADMIN001</Box>
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: { xs: '13px', md: '14px' },
+                    color: '#333333',
+                    fontFamily: 'monospace'
+                  }}
+                >
+                  Password: <Box component="span" sx={{ fontWeight: 600, color: '#714B67' }}>namra123</Box>
+                </Typography>
               </Box>
+            </Box>
+
+            {/* Employee Credentials */}
+            <Box 
+              sx={{ 
+                backgroundColor: '#f5f9ff',
+                borderRadius: '10px',
+                padding: { xs: '12px 16px', md: '14px 18px' },
+                mb: 2,
+                border: '1px solid #d4e4f7'
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: { xs: '11px', md: '12px' },
+                  color: '#2962ff',
+                  fontWeight: 600,
+                  mb: 1,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                👨‍💼 Employee Account
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography
+                  sx={{
+                    fontSize: { xs: '13px', md: '14px' },
+                    color: '#333333',
+                    fontFamily: 'monospace'
+                  }}
+                >
+                  ID: <Box component="span" sx={{ fontWeight: 600, color: '#2962ff' }}>OIJDODRS20260007</Box>
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: { xs: '13px', md: '14px' },
+                    color: '#333333',
+                    fontFamily: 'monospace'
+                  }}
+                >
+                  Password: <Box component="span" sx={{ fontWeight: 600, color: '#2962ff' }}>123456</Box>
+                </Typography>
+              </Box>
+            </Box>
+
+            <Typography
+              sx={{
+                fontSize: { xs: '11px', md: '12px' },
+                color: '#999999',
+                textAlign: 'center',
+                lineHeight: 1.4,
+                mt: 2
+              }}
+            >
+              Use these credentials to explore the application features
             </Typography>
           </Box>
         </Box>
