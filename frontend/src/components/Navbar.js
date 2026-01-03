@@ -42,7 +42,6 @@ function Navbar() {
   const [checkInTime, setCheckInTime] = useState(null);
   const [loading, setLoading] = useState(false);
   const [attendanceMessage, setAttendanceMessage] = useState({ type: '', text: '' });
-  const [attendanceMessage, setAttendanceMessage] = useState({ type: '', text: '' });
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, isAdminOrHR } = useAuth();
