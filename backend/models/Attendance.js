@@ -33,6 +33,12 @@ const attendanceSchema = new mongoose.Schema({
 
 // Calculate work hours before saving
 attendanceSchema.pre('save', function(next) {
+  // Set status to Present if checked in
+  if (this.checkInTime && !this.checkOutTime) {
+    this.status = 'Present';
+  }
+  
+  // Calculate hours if both check-in and check-out exist
   if (this.checkInTime && this.checkOutTime) {
     const diff = this.checkOutTime - this.checkInTime;
     const hours = diff / (1000 * 60 * 60);
@@ -40,6 +46,7 @@ attendanceSchema.pre('save', function(next) {
     this.extraHours = Math.max(0, hours - 8); // Extra hours
     this.status = 'Present';
   }
+  
   next();
 });
 

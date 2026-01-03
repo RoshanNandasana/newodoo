@@ -8,15 +8,23 @@ exports.login = async (req, res) => {
   try {
     const { loginId, password } = req.body;
     
+    console.log('Login attempt:', { loginId, passwordLength: password?.length });
+    
     const user = await User.findOne({ loginId }).populate('employee');
     if (!user) {
+      console.log('User not found:', loginId);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
+    console.log('User found:', { id: user._id, role: user.role });
+    
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.log('Password mismatch for user:', loginId);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    
+    console.log('Login successful for:', loginId);
     
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     
@@ -31,6 +39,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ error: error.message });
   }
 };

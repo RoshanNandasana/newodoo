@@ -75,6 +75,7 @@ exports.deleteEmployee = async (req, res) => {
 exports.getEmployeesWithStatus = async (req, res) => {
   try {
     const Attendance = require('../models/Attendance');
+    const Leave = require('../models/Leave');
     const employees = await Employee.find({ isActive: true })
       .populate('user', 'loginId role');
     
@@ -84,14 +85,42 @@ exports.getEmployeesWithStatus = async (req, res) => {
     
     const employeesWithStatus = await Promise.all(
       employees.map(async (emp) => {
+        // Check if employee has approved leave today
+        const leave = await Leave.findOne({
+          employee: emp._id,
+          status: 'Approved',
+          startDate: { $lte: today },
+          endDate: { $gte: today }
+        });
+        
+        if (leave) {
+          return {
+            ...emp.toObject(),
+            attendanceStatus: 'OnLeave'
+          };
+        }
+        
+        // Check attendance record
         const attendance = await Attendance.findOne({
           employee: emp._id,
           date: today
         });
         
+        let status = 'NotCheckedIn'; // Default status
+        
+        if (attendance) {
+          if (attendance.checkInTime) {
+            status = 'Present';
+          } else if (attendance.status === 'Absent') {
+            status = 'Absent';
+          } else {
+            status = attendance.status;
+          }
+        }
+        
         return {
           ...emp.toObject(),
-          attendanceStatus: attendance ? attendance.status : 'Absent'
+          attendanceStatus: status
         };
       })
     );

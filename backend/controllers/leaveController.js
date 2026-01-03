@@ -7,13 +7,24 @@ exports.applyLeave = async (req, res) => {
   try {
     const { leaveType, startDate, endDate, reason, attachment } = req.body;
     
-    // Calculate number of days
+    // Validate dates
     const start = new Date(startDate);
     const end = new Date(endDate);
+    
+    if (end < start) {
+      return res.status(400).json({ error: 'End date must be after start date' });
+    }
+    
+    // Calculate number of days (inclusive)
     const numberOfDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
     
     // Check leave balance
     const employee = await Employee.findById(req.employeeId);
+    
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+    
     const leaveTypeMap = {
       'PaidLeave': 'paidLeave',
       'SickLeave': 'sickLeave',
@@ -21,15 +32,25 @@ exports.applyLeave = async (req, res) => {
     };
     
     const balanceKey = leaveTypeMap[leaveType];
-    if (leaveType !== 'UnpaidLeave' && employee.leaveBalances[balanceKey] < numberOfDays) {
-      return res.status(400).json({ error: 'Insufficient leave balance' });
+    
+    // Check balance only for Paid and Sick leave
+    if (leaveType !== 'UnpaidLeave') {
+      if (!employee.leaveBalances || employee.leaveBalances[balanceKey] === undefined) {
+        return res.status(400).json({ error: 'Leave balance not initialized' });
+      }
+      
+      if (employee.leaveBalances[balanceKey] < numberOfDays) {
+        return res.status(400).json({ 
+          error: `Insufficient ${leaveType} balance. Available: ${employee.leaveBalances[balanceKey]} days, Requested: ${numberOfDays} days` 
+        });
+      }
     }
     
     const leave = new Leave({
       employee: req.employeeId,
       leaveType,
-      startDate,
-      endDate,
+      startDate: start,
+      endDate: end,
       numberOfDays,
       reason,
       attachment
@@ -37,7 +58,7 @@ exports.applyLeave = async (req, res) => {
     
     await leave.save();
     
-    res.status(201).json({ message: 'Leave application submitted', leave });
+    res.status(201).json({ message: 'Leave application submitted successfully', leave });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -83,7 +104,7 @@ exports.reviewLeave = async (req, res) => {
     const { status, reviewComments } = req.body;
     
     if (!['Approved', 'Rejected'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
+      return res.status(400).json({ error: 'Invalid status. Must be Approved or Rejected' });
     }
     
     const leave = await Leave.findById(id).populate('employee');
@@ -93,7 +114,7 @@ exports.reviewLeave = async (req, res) => {
     }
     
     if (leave.status !== 'Pending') {
-      return res.status(400).json({ error: 'Leave request already reviewed' });
+      return res.status(400).json({ error: `Leave request already ${leave.status}` });
     }
     
     leave.status = status;
@@ -107,6 +128,10 @@ exports.reviewLeave = async (req, res) => {
     if (status === 'Approved') {
       const employee = await Employee.findById(leave.employee._id);
       
+      if (!employee) {
+        return res.status(404).json({ error: 'Employee not found' });
+      }
+      
       const leaveTypeMap = {
         'PaidLeave': 'paidLeave',
         'SickLeave': 'sickLeave',
@@ -114,12 +139,17 @@ exports.reviewLeave = async (req, res) => {
       };
       
       const balanceKey = leaveTypeMap[leave.leaveType];
-      if (leaveType !== 'UnpaidLeave') {
-        employee.leaveBalances[balanceKey] -= leave.numberOfDays;
+      
+      // Deduct from leave balance (except unpaid leave)
+      if (leave.leaveType !== 'UnpaidLeave') {
+        if (!employee.leaveBalances) {
+          employee.leaveBalances = { paidLeave: 20, sickLeave: 10, unpaidLeave: 0 };
+        }
+        employee.leaveBalances[balanceKey] = Math.max(0, employee.leaveBalances[balanceKey] - leave.numberOfDays);
         await employee.save();
       }
       
-      // Mark attendance as on leave
+      // Mark attendance as OnLeave for each day in the leave period
       const start = new Date(leave.startDate);
       const end = new Date(leave.endDate);
       
@@ -127,16 +157,27 @@ exports.reviewLeave = async (req, res) => {
         const date = new Date(d);
         date.setHours(0, 0, 0, 0);
         
+        // Create or update attendance record
         await Attendance.findOneAndUpdate(
           { employee: leave.employee._id, date },
-          { status: 'OnLeave' },
-          { upsert: true }
+          { 
+            status: 'OnLeave',
+            employee: leave.employee._id,
+            date: date
+          },
+          { upsert: true, new: true }
         );
       }
     }
     
-    res.json({ message: `Leave request ${status.toLowerCase()}`, leave });
+    res.json({ 
+      message: `Leave request ${status.toLowerCase()} successfully`, 
+      leave: await Leave.findById(leave._id)
+        .populate('employee', 'firstName lastName email')
+        .populate('reviewedBy', 'loginId')
+    });
   } catch (error) {
+    console.error('Error reviewing leave:', error);
     res.status(500).json({ error: error.message });
   }
 };
